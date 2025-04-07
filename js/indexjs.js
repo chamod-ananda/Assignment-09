@@ -8,12 +8,13 @@ const canvas = document.getElementById("gameCanvas");
       let currentLevel = 0;
       let exitActive = false;
 
-      const levels = [
+      // Original levels data
+      const originalLevels = [
         {
           // Level 1
           map: [
             "WWWWWWWWWWWWW",
-            "W  C   W    W",
+            "WP C   W    W",
             "W WWWW W WW W",
             "W W      C  W",
             "W W WWWWWWW W",
@@ -34,7 +35,7 @@ const canvas = document.getElementById("gameCanvas");
             "W W WWW WWW W",
             "W C   C   C W",
             "W WWWWWWWWW W",
-            "W C W   C  W",
+            "WP C W   C  W",
             "W W W WWW WWW",
             "W C C W   E W",
             "W WWWWW WWW W",
@@ -54,7 +55,7 @@ const canvas = document.getElementById("gameCanvas");
             "W C   C   C W",
             "W WWWWW W W W",
             "W C W C W C W",
-            "W W W W W W W",
+            "WPW W W W W W",
             "W   C   C E W",
             "WWWWWWWWWWWWW",
           ],
@@ -79,12 +80,38 @@ const canvas = document.getElementById("gameCanvas");
         },
       ];
 
+      let levels = JSON.parse(JSON.stringify(originalLevels));
+
+      // Game elements
+      const victoryButtons = document.querySelector(".victory-buttons");
+      const playAgainBtn = document.getElementById("playAgainBtn");
+      const quitBtn = document.getElementById("quitBtn");
+
+      function showVictoryButtons() {
+        victoryButtons.style.display = "flex";
+      }
+
+      function hideVictoryButtons() {
+        victoryButtons.style.display = "none";
+      }
+
+      function resetGame() {
+        score = 0;
+        currentLevel = 0;
+        exitActive = false;
+        document.getElementById("score").textContent = "0";
+        levels = JSON.parse(JSON.stringify(originalLevels));
+        loadLevel(0);
+        drawGame();
+        hideVictoryButtons();
+      }
+
       function loadLevel(levelIndex) {
         currentLevel = levelIndex;
         document.getElementById("level").textContent = levelIndex + 1;
         exitActive = false;
 
-        // Reset player position
+        // Find player start position
         levels[levelIndex].map.forEach((row, y) => {
           const x = row.indexOf("P");
           if (x !== -1) player = { x, y };
@@ -131,6 +158,16 @@ const canvas = document.getElementById("gameCanvas");
       function movePlayer(dx, dy) {
         const newX = player.x + dx;
         const newY = player.y + dy;
+
+        // Boundary checking
+        if (
+          newX < 0 ||
+          newX >= levels[currentLevel].map[0].length ||
+          newY < 0 ||
+          newY >= levels[currentLevel].map.length
+        )
+          return;
+
         const cell = levels[currentLevel].map[newY][newX];
 
         if (cell !== "W") {
@@ -141,9 +178,9 @@ const canvas = document.getElementById("gameCanvas");
             score += 10;
             document.getElementById("score").textContent = score;
             levels[currentLevel].map[newY] =
-              levels[currentLevel].map[newY].substr(0, newX) +
+              levels[currentLevel].map[newY].substring(0, newX) +
               " " +
-              levels[currentLevel].map[newY].substr(newX + 1);
+              levels[currentLevel].map[newY].substring(newX + 1);
 
             if (--levels[currentLevel].coins === 0) {
               exitActive = true;
@@ -154,12 +191,13 @@ const canvas = document.getElementById("gameCanvas");
             if (currentLevel < levels.length - 1) {
               loadLevel(currentLevel + 1);
             } else {
-              alert("Congratulations! You won with " + score + " points!");
+              showVictoryButtons();
             }
           }
         }
       }
 
+      // Event listeners
       document.addEventListener("keydown", (e) => {
         switch (e.key) {
           case "ArrowUp":
@@ -178,6 +216,11 @@ const canvas = document.getElementById("gameCanvas");
         drawGame();
       });
 
+      playAgainBtn.addEventListener("click", resetGame);
+      quitBtn.addEventListener("click", () => {
+        resetGame();
+        alert("Thanks for playing!");
+      });
+
       // Initialize game
-      loadLevel(0);
-      drawGame();
+      resetGame();
